@@ -1,20 +1,24 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { Cs6620MidtermStack } from '../lib/cs6620_midterm-stack';
+import { StorageStack } from '../lib/storage-stack';
+import { ReplicatorStack } from '../lib/replicator-stack';
+import { CleanerStack } from '../lib/cleaner-stack';
 
 const app = new cdk.App();
-new Cs6620MidtermStack(app, 'Cs6620MidtermStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const storage = new StorageStack(app, 'BackupStorageStack', {
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+});
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+new ReplicatorStack(app, 'BackupReplicatorStack', {
+  table: storage.table,
+  bucketSrc: storage.bucketSrc,
+  bucketDst: storage.bucketDst,
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+});
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+new CleanerStack(app, 'BackupCleanerStack', {
+  table: storage.table,
+  bucketDst: storage.bucketDst,
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 });
